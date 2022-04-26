@@ -26,6 +26,7 @@ app.add_middleware(CORSMiddleware,
                    allow_methods=["*"],
                    allow_headers=["*"], )
 
+sign_in_out_and_up = "Sign in | Sign out | Sign Up"
 
 def check_password(password):
     # Password min length = 8, have at least one UpperCase, one LowerCase and one number
@@ -60,8 +61,10 @@ def get_user():
     users = db.session.query(User).all()
     return users
 
+# Sign In - Sign Out - Sign Up | Section
+# ######################################################################################################################
 
-@app.post("/user/")
+@app.post("/user/", tags=[sign_in_out_and_up], summary="Create new user")
 def new_user(create_new_user: schemas.UserIn):
     # Uutta käyttäjää luodessa järjestelmään, tarkistetaan ensin, että käyttäjänimi tai sähkäposti ei ole käytässä
     user = db.session.query(User.username, User.email).filter(User.username == create_new_user.username,
@@ -89,7 +92,7 @@ def new_user(create_new_user: schemas.UserIn):
     return {"message": f"User {user.username} created {user.email}"}
 
 
-@app.post("/login/")
+@app.post("/login/", tags=[sign_in_out_and_up], summary="Login user")
 def user_login(login: schemas.Login):
     # Tallennetaan 'request':in käyttäjänimi sekä salasana muuttujiin
     username = login.username
@@ -108,7 +111,7 @@ def user_login(login: schemas.Login):
         return "Incorrect password"
 
 
-@app.post("/{username}/logout/")
+@app.post("/{username}/logout/", tags=[sign_in_out_and_up], summary="Logout user")
 def user_logout(username: str):
     # Tehdään tietokanta kysely, joka hakee käyttäjänimen
     query_user = db.session.query(User.username, User.login_status).filter(User.username == username).first()
@@ -121,6 +124,8 @@ def user_logout(username: str):
     db.session.query(User).filter(User.username == username).update({User.login_status: False})
     db.session.commit()
     return "Logout successful"
+
+
 
 
 @app.post("/new-drone/")
@@ -154,15 +159,25 @@ def rent_drone(username: str, drone_id: int):
         return f"Not logged in as a '{username}'"
     if query_drone.booked_status:
         return f"Drone {drone_id} is already booked"
+    print("\n\n\n\n------------")
+    print(f"Username: {query_user.username}\n"
+          f"User id: {query_user.id}\n"
+          f"Have drone in use: {query_user.have_drone_in_use}\n"
+          f"Login Status: {query_user.login_status}\n")
+    print(f"Drone ID: {drone_id} \n"
+          f"Drone booked status: {query_drone.booked_status}")
 
-    # Asetetaan dronen varauksen status arvoksi True ja tallennetaan tietokantaan
-    db.session.query(Drone).filter(Drone.id == drone_id).update({Drone.booked_status: True})
-    db.session.query(User).filter(User.username == username).update({User.have_drone_in_use: drone_id})
     start_driving = DrivingSessions(
         user_id=query_user.id,
         drone_id=query_drone.id,
-        drive_session_started=time.strftime("%d-%m-%Y %H:%M:%S", time.localtime())
+        drive_session_started=time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
     )
+    print("Start Driving: ", start_driving.__dict__)
+    print("\n\n\n\n------------")
+    # Asetetaan dronen varauksen status arvoksi True ja tallennetaan tietokantaan
+    db.session.query(Drone).filter(Drone.id == drone_id).update({Drone.booked_status: True})
+    db.session.query(User).filter(User.id == query_user.id).update({User.have_drone_in_use: True})
+
     db.session.add(start_driving)
     db.session.commit()
     return {
@@ -185,13 +200,16 @@ def return_drone(username: str, session_id: int):
     if not query_user:
         raise HTTPException(status_code=400, detail={"msg": "User not found"})
     if not query_user.login_status:
-        return f"Not logged in as a '{username}'"
+        raise HTTPException(status_code=400, detail=f"Not logged in as a '{username}'")
     if not query_user.have_drone_in_use:
-        return f"User '{username}' does not have a drone in use"
+        raise HTTPException(status_code=400, detail=f"User '{username}' does not have a drone in use")
     if not query_session:
-        return f"Session {query_session.session_id} not found"
+        raise HTTPException(status_code=400, detail=f"Session {query_session.id} not found")
+    print(query_session.__dict__)
+    if query_session.session_ended:
+        raise HTTPException(status_code=400, detail=f"Session {query_session.id} already ended")
     # Haetaan tämän hetkinen aika
-    timenow = time.strftime("%d-%m-%Y %H:%M:%S", time.localtime())
+    timenow = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
 
     # ################################################################################
     # Tehdään tietokantakysely ja päivitetään tietokantaan käyttäjän ajosession päättymisaika
@@ -222,7 +240,8 @@ def return_drone(username: str, session_id: int):
     # Lopuksi vielä tietokantakysely joka hakee ajosession pituuden tiedon
     length = db.session.query(DrivingSessions.drive_session_length).filter(DrivingSessions.id == session_id).first()[0]
     return {
-        "msg": f"Drone {query_user} returned",
+        "session_status": f"Drone session {session_id} ended",
+        "drone_returned": f"Drone {query_session.drone_id} returned",
         "session_length": length
     }
 
@@ -236,12 +255,6 @@ def get_all_drive_sessions():
 @app.get("/get-drive-session-by-id/{session_id}")
 def get_drive_session_by_id(session_id: int):
     session = db.session.query(DrivingSessions).filter(DrivingSessions.id == session_id).first()
-    session_started = session.drive_session_started
-    session_ended = session.drive_session_ended
-    print("Session started: ", session_ended, type(session_ended))
-    print("Session ended: ", session_ended, type(session_ended))
-    diff = session_ended - session_started
-    print("Diff", diff)
     return session
 
 # drone_use_date_started=
