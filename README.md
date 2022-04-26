@@ -1,6 +1,6 @@
 # Kredentiaalit .env tiedostolle
 --- 
-## Luo .env tiedosto ja CopyPastee alla olevat tiedostot siihen
+## Luo .env tiedosto kansion projektin juureen ja CopyPastee alla olevat tiedostot siihen 
 ```
 DATABASE_URL=postgresql://postgres:postgres@db:5432/drones
 POSTGRES_USER=postgres
