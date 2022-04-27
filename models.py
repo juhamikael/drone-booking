@@ -15,7 +15,7 @@ Base = declarative_base()
 
 
 class User(Base):
-    __tablename__ = "user"
+    __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(64), nullable=False)
     email = Column(String(64), nullable=False, unique=True)
@@ -28,7 +28,7 @@ class User(Base):
 class DrivingSessions(Base):
     __tablename__ = "driving_sessions"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('user.id'))
+    user_id = Column(Integer, ForeignKey('users.id'))
     drone_id = Column(Integer, ForeignKey('drone.id'))
     drive_session_started = Column(TIMESTAMP, nullable=False)
     drive_session_ended = Column(TIMESTAMP, nullable=True)
@@ -38,9 +38,9 @@ class DrivingSessions(Base):
 
 class Address(Base):
     __tablename__ = "address"
-    id = Column(Integer, primary_key=True, index=True)
-    address = Column(String(64))
-    user_id = Column(Integer, ForeignKey('user.id'))
+    id = Column(Integer, primary_key=True, index=True, nullable=False)
+    link_to_images = Column(String(256), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 
 
 class Drone(Base):
@@ -56,10 +56,9 @@ class Drone(Base):
 class Images(Base):
     __tablename__ = "images"
     id = Column(Integer, primary_key=True, index=True)
-    info = Column(String(64))
-    date = Column(DATE)
+    info = Column(TEXT)
     coordinates = Column(String(64))
-    drone_id = Column(Integer, ForeignKey('drone.id'))
+    session_id = Column(Integer, ForeignKey('driving_sessions.id'))
     address_id = Column(Integer, ForeignKey('address.id'))
 
 
