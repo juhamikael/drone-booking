@@ -60,26 +60,26 @@ def error_handler_on_rent(user_query, drone_query, username, drone_id):
     """
     user_not_found_nor_logged_in(user_query, username)
     if not drone_query:
-        raise HTTPException(status_code=400, detail={"msg": "Drone not found"})
+        raise HTTPException(stpgatus_code=400, detail={"msg": "Drone not found"})
     if user_query.have_drone_in_use:
         raise HTTPException(status_code=400, detail={"msg": "User already has a drone in use"})
     if drone_query.booked_status:
         raise HTTPException(status_code=400, detail=f"Drone {drone_id} is already booked")
 
 
-def error_handler_on_return(user_query, session_query, username):
+def error_handler_on_return(user_query, session_query, username, session_id):
     """
     - Tarkistaa virheet dronen palautus pyynnössä
     """
     user_not_found_nor_logged_in(user_query, username)
+    if not session_query:
+        raise HTTPException(status_code=400, detail=f"Session {session_id} not found")
+    if session_query.session_ended:
+        raise HTTPException(status_code=400, detail=f"Session {session_query.id} already ended")
     if session_query.user_id != user_query.id:
         raise HTTPException(status_code=400, detail={"msg": "User is not the owner of this session"})
     if not user_query.have_drone_in_use:
         raise HTTPException(status_code=400, detail=f"User '{username}' does not have a drone in use")
-    if not session_query:
-        raise HTTPException(status_code=400, detail=f"Session {session_query.id} not found")
-    if session_query.session_ended:
-        raise HTTPException(status_code=400, detail=f"Session {session_query.id} already ended")
 
 
 def add_end_time(session_id: int):

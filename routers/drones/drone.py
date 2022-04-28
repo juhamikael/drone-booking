@@ -18,8 +18,21 @@ tag = "2 Drones"
 def get_drones():
     # Tehdaan tietokantakysely joka hakee kaikki dronet
     drones = db.session.query(Drone).all()
+    if len(drones) == 0:
+        raise HTTPException(status_code=404, detail="No drones found")
+    return {"msg": f"{len(drones)} drones found",
+            "drones": drones}
 
-    return drones
+
+@router.get("/drones/free-drones", tags=[tag])
+def get_all_free_drones():
+    # Tehdaan tietokantakysely joka hakee kaikki vapaita dronet
+    drones = db.session.query(Drone.id, Drone.model, Drone.brand, Drone.booked_status.label("is_booked")).filter(
+        Drone.booked_status == "false").all()
+    if len(drones) == 0:
+        raise HTTPException(status_code=404, detail="No drones found")
+    return {"msg": f"{len(drones)} free drones found",
+            "drones": drones}
 
 
 @router.post("/new-drone/", tags=[tag])
@@ -39,19 +52,22 @@ def add_drone(new_drone: schemas.DroneIn):
 def get_all_drive_sessions():
     # Tehdaan tietokantakysely joka hakee jokaisen ajosession tiedot
     sessions = db.session.query(DrivingSessions).all()
-    # Show also all the users who are driving
+    if len(sessions) == 0:
+        raise HTTPException(status_code=404, detail="No sessions found")
+    # Naytetaan jokaisessa ajosessiossa myos kayttaja
     for session in sessions:
         session.user = db.session.query(User.username).filter(User.id == session.user_id).first()
-        print(session)
-
-    return sessions
+    return {"msg": f"{len(sessions)} sessions found",
+            "sessions": sessions
+            }
 
 
 @router.get("/get-drive-session-by-id/{session_id}", tags=[tag])
 def get_drive_session_by_id(session_id: int):
     # Tehdaan tietokantakysely joka hakee ajosession tiedot session_id:n perusteella
     session = db.session.query(DrivingSessions).filter(DrivingSessions.id == session_id).first()
-
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
     return session
 
 
@@ -95,7 +111,7 @@ def return_drone(username: str, session_id: int):
     query_user = db.session.query(User.username, User.login_status,
                                   User.id, User.have_drone_in_use).filter(User.username == username).first()
     query_session = db.session.query(DrivingSessions).filter(DrivingSessions.id == session_id).first()
-    drone_functions.error_handler_on_return(query_user, query_session, username)
+    drone_functions.error_handler_on_return(query_user, query_session, username, session_id)
     drone_functions.add_end_time(session_id)
     diff = drone_functions.get_session_length(session_id)
     drone_functions.update_session_length(session_id, diff, username, query_session.drone_id)
