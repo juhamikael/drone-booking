@@ -22,10 +22,15 @@ def get_user():
 @router.post("/user/", tags=[tag], summary="Create new users")
 def new_user(create_new_user: schemas.UserIn):
     # Uutta kayttajaa luodessa jarjestelmaan, tarkistetaan ensin, etta kayttajanimi tai sahkoposti ei ole kaytossa
-    user = db.session.query(User.username, User.email).filter(User.username == create_new_user.username,
-                                                              User.email == create_new_user.email).first()
-    if user:
-        raise HTTPException(status_code=400, detail="User already exists")
+    user = db.session.query(User).all()
+    user_functions.check_errors(create_new_user, user)
+
+    # print(f"\n\n\n---New User info{create_new_user}\n\n\n")
+    # print(f"\n\n\n---New User info{user}\n\n\n")
+
+    # if user:
+    #     raise HTTPException(status_code=400, detail="User already exists")
+
     # Tarkistetaan etta salasana tayttaa vaatimukset
     password = user_functions.check_password(create_new_user.password)
     if not password:
