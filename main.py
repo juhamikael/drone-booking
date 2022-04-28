@@ -6,7 +6,6 @@ import os
 from dotenv import load_dotenv
 from routers.users import user
 from routers.drones import drone
-
 load_dotenv()
 
 app = FastAPI()
@@ -16,14 +15,17 @@ app.include_router(drone.router)
 app.add_middleware(
     DBSessionMiddleware,
     db_url=os.getenv('DATABASE_URL'))
+
 origins = [
     "http://localhost",
 ]
+
 app.add_middleware(CORSMiddleware,
                    allow_origins=origins,
                    allow_credentials=True,
                    allow_methods=["*"],
-                   allow_headers=["*"], )
+                   allow_headers=["*"],
+                   )
 
 
 @app.get("/", tags=["ROOT"], summary="Root redirect")

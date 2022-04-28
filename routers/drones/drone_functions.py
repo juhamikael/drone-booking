@@ -59,7 +59,7 @@ def error_handler_on_rent(user_query, drone_query, username, drone_id):
         HTTPException: 400 Bad Request, "Drone {drone_id} is already booked"
     """
     user_not_found_nor_logged_in(user_query, username)
-    if not user_query:
+    if not drone_query:
         raise HTTPException(status_code=400, detail={"msg": "Drone not found"})
     if user_query.have_drone_in_use:
         raise HTTPException(status_code=400, detail={"msg": "User already has a drone in use"})
@@ -72,6 +72,8 @@ def error_handler_on_return(user_query, session_query, username):
     - Tarkistaa virheet dronen palautus pyynnössä
     """
     user_not_found_nor_logged_in(user_query, username)
+    if session_query.user_id != user_query.id:
+        raise HTTPException(status_code=400, detail={"msg": "User is not the owner of this session"})
     if not user_query.have_drone_in_use:
         raise HTTPException(status_code=400, detail=f"User '{username}' does not have a drone in use")
     if not session_query:
@@ -103,7 +105,8 @@ def get_session_length(session_id: int):
     new_session = db.session.query(DrivingSessions).filter(DrivingSessions.id == session_id).first()
     session_started = new_session.drive_session_started
     session_ended = new_session.drive_session_ended
-    return session_ended - session_started
+    difference = session_ended - session_started
+    return difference.seconds
 
 
 def update_session_length(session_id: int, diff, username: str, session_drone_id: int):

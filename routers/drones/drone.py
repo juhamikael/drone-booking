@@ -18,6 +18,7 @@ tag = "2 Drones"
 def get_drones():
     # Tehdaan tietokantakysely joka hakee kaikki dronet
     drones = db.session.query(Drone).all()
+
     return drones
 
 
@@ -38,6 +39,11 @@ def add_drone(new_drone: schemas.DroneIn):
 def get_all_drive_sessions():
     # Tehdaan tietokantakysely joka hakee jokaisen ajosession tiedot
     sessions = db.session.query(DrivingSessions).all()
+    # Show also all the users who are driving
+    for session in sessions:
+        session.user = db.session.query(User.username).filter(User.id == session.user_id).first()
+        print(session)
+
     return sessions
 
 
@@ -45,6 +51,7 @@ def get_all_drive_sessions():
 def get_drive_session_by_id(session_id: int):
     # Tehdaan tietokantakysely joka hakee ajosession tiedot session_id:n perusteella
     session = db.session.query(DrivingSessions).filter(DrivingSessions.id == session_id).first()
+
     return session
 
 
@@ -61,6 +68,7 @@ def rent_drone(username: str, drone_id: int):
     # 2.  Ajetaan error_handler funktio, jossa tarkastetaan etta kaikki on ok
     # 3.  Ajetaan start_driving funktio, jossa asetetaan dronen ja kayttajan idt ajosessiolle
     #     seka merkataan aloitusaika
+
     query_user = db.session.query(User.username, User.login_status, User.id, User.have_drone_in_use).filter(
         User.username == username).first()
     query_drone = db.session.query(Drone.id, Drone.booked_status).filter(Drone.id == drone_id).first()
