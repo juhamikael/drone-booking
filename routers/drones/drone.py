@@ -2,7 +2,6 @@ from fastapi import HTTPException, APIRouter
 from fastapi_sqlalchemy import db
 from models import User, DrivingSessions, Drone
 import schemas
-import time
 from . import drone_functions
 
 router = APIRouter()

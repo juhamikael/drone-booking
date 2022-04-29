@@ -27,10 +27,6 @@ def new_user(create_new_user: schemas.UserIn):
 
     # print(f"\n\n\n---New User info{create_new_user}\n\n\n")
     # print(f"\n\n\n---New User info{user}\n\n\n")
-
-    # if user:
-    #     raise HTTPException(status_code=400, detail="User already exists")
-
     # Tarkistetaan etta salasana tayttaa vaatimukset
     password = user_functions.check_password(create_new_user.password)
     if not password:
