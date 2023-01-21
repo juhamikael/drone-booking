@@ -1,6 +1,6 @@
-# Kredentiaalit .env tiedostolle
+# Credentials for .env file
 --- 
-## Luo .env tiedosto kansion projektin juureen ja liitä alla olevat tiedostot siihen 
+## Create an .env file in the root of the project folder and attach the files below to it 
 ```
 DATABASE_URL=postgresql://postgres:postgres@db:5432/drones
 POSTGRES_USER=postgres
@@ -10,7 +10,7 @@ PGADMIN_EMAIL=admin@admin.com
 PGADMIN_PASSWORD=admin
 ```
 
-# Käynnistys
+# Startup
 ```
 docker-compose up --build
 ```
